@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DataLogger Pro</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --primary: #0D47A1;
+    --primary-light: #1565C0;
+    --accent: #C9A227;
+    --accent-light: #E0B93A;
+    --bg: #F7F8FA;
+    --card: #FFFFFF;
+    --ink: #1A1F27;
+    --ink-soft: #5B6472;
+    --border: #E3E7ED;
+    --success: #1B8A4B;
+    --error: #C62828;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:'Poppins', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 32px 16px 80px;
+  }
+  .wrap{ max-width: 640px; margin: 0 auto; }
+
+  .ornament{ display:flex; align-items:center; gap:12px; margin: 6px 0 20px; }
+  .ornament .line{
+    flex:1; height:2px;
+    background: linear-gradient(90deg, transparent, var(--accent) 20%, var(--accent) 80%, transparent);
+  }
+
+  header{ margin-bottom: 10px; text-align:center; }
+  .eyebrow{
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--primary);
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  h1{
+    font-family:'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 40px;
+    margin: 10px 0 8px;
+    color: var(--ink);
+    letter-spacing: -1px;
+  }
+  .sub{
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.8;
+    max-width: 50ch;
+    margin: 0 auto;
+    font-weight: 400;
+  }
+
+  .card{
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 16px;
+    padding: 32px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 24px rgba(20,30,50,0.06);
+    position: relative;
+    margin-top: 24px;
+  }
+
+  .field-label{
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+    display:block;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .field{ margin-bottom: 20px; }
+  input[type="text"], input[type="tel"], textarea{
+    width: 100%;
+    font-family:'Poppins', sans-serif;
+    font-size: 15px;
+    padding: 13px 15px;
+    border: none;
+    border-bottom: 2px solid var(--border);
+    background: #FAFBFC;
+    border-radius: 6px 6px 0 0;
+    color: var(--ink);
+    outline: none;
+    transition: all .2s ease;
+  }
+  input::placeholder, textarea::placeholder{
+    color: #9AA5B1;
+  }
+  input:focus, textarea:focus{ 
+    border-color: var(--accent);
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(201,162,39,0.15);
+  }
+  textarea{ resize: vertical; min-height: 56px; }
+
+  .btn{
+    font-family:'Poppins', sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    border: 2px solid var(--primary);
+    background: transparent;
+    color: var(--primary);
+    padding: 12px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    transition: all .2s ease;
+    letter-spacing: 0.3px;
+  }
+  .btn:hover{ 
+    background: var(--primary); 
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(13,71,161,0.25);
+  }
+  .btn:active{ transform: translateY(0); }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .btn.primary{
+    background: linear-gradient(135deg, var(--accent-light), var(--accent));
+    border-color: var(--accent);
+    color: #2A2110;
+    box-shadow: 0 10px 24px rgba(201,162,39,0.3);
+    font-weight: 800;
+  }
+  .btn.primary:hover{ 
+    filter: brightness(1.06);
+    box-shadow: 0 14px 32px rgba(201,162,39,0.4);
+    color: #2A2110;
+  }
+
+  .capture-row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom: 20px; }
+
+  .gps-chip{
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    background: #F1F3F6;
+    border: 1.5px solid var(--border);
+    padding: 9px 14px;
+    border-radius: 24px;
+    word-break: break-all;
+  }
+  .gps-chip.empty{ 
+    color: var(--ink-soft); 
+  }
+  .gps-chip.success{
+    background: rgba(27,138,75,0.1);
+    border-color: var(--success);
+    color: var(--success);
+  }
+
+  .photo-previews{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 4px; }
+  .photo-preview-wrap{ position:relative; }
+  .photo-preview{
+    width: 100px; height: 100px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 3px solid var(--accent);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    animation: photoAppear 0.25s ease;
+    display:block;
+  }
+  .photo-remove{
+    position:absolute; top:-8px; right:-8px;
+    width:22px; height:22px;
+    border-radius:50%;
+    background: var(--error);
+    color:#fff;
+    border:2px solid #fff;
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700;
+  }
+
+  @keyframes photoAppear{
+    from{ opacity:0; transform: scale(0.9); }
+    to{ opacity:1; transform: scale(1); }
+  }
+
+  .photo-count-note{ font-size: 11.5px; color: var(--ink-soft); margin-top: 6px; }
+
+  .add-btn{ width:100%; justify-content:center; padding:15px; font-size:15px; margin-top: 8px; }
+
+  .status{ 
+    font-size: 12.5px; 
+    margin-top: 12px; 
+    min-height: 16px; 
+    font-weight:600;
+    padding: 8px 12px;
+    border-radius: 6px;
+  }
+  .status.success{ color: var(--success); background: rgba(27,138,75,0.1); }
+  .status.error{ color: var(--error); background: rgba(198,40,40,0.08); }
+
+  .records-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin: 40px 0 16px;
+  }
+  .records-head h2{
+    font-family:'Poppins', sans-serif;
+    font-weight:700; font-size:24px; color: var(--primary); margin:0;
+  }
+  .count{ font-size:13px; color: var(--ink-soft); font-weight:700; }
+
+  .empty-state{
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
+    padding: 40px 24px;
+    text-align:center;
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height:1.8;
+    background: #FAFBFC;
+  }
+
+  .record{
+    display:flex;
+    gap: 18px;
+    padding: 20px;
+    margin-bottom: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    position: relative;
+    transition: all .2s ease;
+    box-shadow: 0 2px 10px rgba(20,30,50,0.04);
+  }
+  .record:hover{
+    border-color: var(--accent);
+    box-shadow: 0 8px 24px rgba(201,162,39,0.12);
+  }
+  .record .thumb-wrap{
+    flex-shrink:0;
+    position:relative;
+    width: 100px;
+  }
+  .record .thumb-grid{
+    display:flex; flex-wrap:wrap; gap:6px; width:100px;
+  }
+  .record img.thumb{
+    width:47px; height:47px; object-fit:cover;
+    border-radius: 8px;
+    border: 2px solid var(--accent);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+  }
+  .record img.thumb.single{ width:100px; height:100px; }
+  .record .no-photo{
+    width:100px; height:100px;
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    display:flex; align-items:center; justify-content:center;
+    color: #9AA5B1;
+    font-size: 11px;
+    text-align:center;
+    background: #FAFBFC;
+  }
+  .record .seal{
+    position:absolute;
+    bottom:-14px; left:-14px;
+    width:48px; height:48px;
+    border-radius:50%;
+    border: 2.5px solid var(--accent);
+    box-shadow: 0 0 0 4px var(--card), 0 0 0 5px rgba(201,162,39,0.4);
+    color: #7A5F13;
+    background: #FFF7DE;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 8.5px;
+    text-align:center;
+    line-height:1.1;
+    font-weight:800;
+  }
+  .record .info{ flex:1; min-width:0; }
+  .record .name{
+    font-family:'Poppins', sans-serif;
+    font-weight:700;
+    font-size: 18px;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+  .record .meta{ font-size: 13px; color: var(--ink-soft); line-height: 1.9; }
+  .record .meta span{ display:block; }
+  .record .coords{
+    font-size: 12px;
+    color: var(--primary);
+    margin-top: 6px;
+    font-weight:700;
+    background: #EAF1FB;
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    font-family: 'Courier Prime', monospace;
+  }
+  .record .timestamp{ font-size:11px; color:#9AA5B1; margin-top:6px; }
+  
+  .record .actions{
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .record .map-btn, .record .del{
+    background:none; border:none; color: var(--ink-soft);
+    font-size: 11px; font-weight:700;
+    cursor:pointer; padding: 4px 0; 
+  }
+  .record .map-btn:hover{ color: var(--success); }
+  .record .del:hover{ color: var(--error); }
+
+  .export-bar{ margin-top: 36px; display:flex; gap:12px; flex-wrap:wrap; }
+  .export-bar .btn{ flex:1; justify-content:center; }
+
+  .note{ 
+    margin-top:18px; 
+    font-size: 12px; 
+    color: var(--ink-soft); 
+    line-height:1.8; 
+    text-align:center;
+    font-weight: 500;
+  }
+
+  #fileInput{ display:none; }
+
+  /* ===== print / PDF export layout ===== */
+  #printSheet{ display:none; }
+  @media print{
+    @page{ margin: 18mm 14mm; }
+    body > .wrap > *:not(#printSheet){ display:none !important; }
+    #printSheet{ display:block !important; }
+    body{ background:#fff; color:#000; padding:0; }
+    .wrap{ max-width:none; padding:0; }
+    .p-title{ font-family:'Poppins', sans-serif; font-size:30px; color:#0D47A1; margin:0 0 4px; font-weight:800; }
+    .p-sub{ font-size:12px; color:#555; margin-bottom:24px; }
+    .p-record{
+      padding:20px 0; border-bottom: 2px solid #ddd;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .p-record-header{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+    .p-name{ font-family:'Poppins', sans-serif; font-size:19px; color:#111; margin:0; font-weight:800; }
+    .p-timestamp{ font-size:10.5px; color:#888; }
+    .p-meta{ font-size:12.5px; color:#333; line-height:1.9; margin-bottom:10px; }
+    .p-coords{ font-size:11.5px; color:#0D47A1; margin-bottom:12px; font-weight:bold; background:#f5f5f5; padding:8px; border-radius:4px; display:inline-block; }
+    .p-photo-grid{ display:flex; flex-wrap:wrap; gap:10px; }
+    .p-photo-grid img{
+      width: 260px;
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      border-radius:6px;
+      border:2px solid #C9A227;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .p-noimg{ font-size:11px; color:#999; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  .location-modal{
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(20,30,50,0.55);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .location-modal.show{
+    display: flex;
+  }
+  .location-card{
+    background: var(--card);
+    border-radius: 16px;
+    padding: 0;
+    max-width: 500px;
+    width: 100%;
+    color: var(--ink);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+  }
+  .location-header{
+    padding: 24px;
+    border-bottom: 2px solid var(--accent);
+    background: var(--primary);
+    color: #fff;
+    border-radius: 16px 16px 0 0;
+  }
+  .location-header h3{
+    margin: 0 0 6px;
+    font-size: 18px;
+    color: #fff;
+  }
+  .location-coords-display{
+    font-size: 11px;
+    color: rgba(255,255,255,0.85);
+  }
+  #mapContainer{
+    width: 100%;
+    height: 350px;
+    flex: 1;
+  }
+  .location-footer{
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+  }
+  .location-footer button, .location-footer a{
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 12px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .location-footer .map-link{
+    background: var(--success);
+    color: white;
+  }
+  .location-footer .close-btn{
+    background: #E3E7ED;
+    color: #333;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">⭐ DataLogger Pro ⭐</div>
+    <h1>Data Collector</h1>
+    <div class="sub">Capture names, phone numbers, addresses, GPS locations, and photos. All data is automatically saved locally on your device.</div>
+  </header>
+
+  <div class="ornament">
+    <div class="line"></div>
+    <span style="color: var(--accent); font-size: 20px;">✓</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label class="field-label" for="name">Full Name</label>
+      <input type="text" id="name" placeholder="John Smith">
+    </div>
+    <div class="field">
+      <label class="field-label" for="phone">Phone Number</label>
+      <input type="tel" id="phone" placeholder="+1 555-123-4567">
+    </div>
+    <div class="field">
+      <label class="field-label" for="address">Address</label>
+      <textarea id="address" placeholder="Street, City, Postal Code"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Location & Photos</label>
+      <div class="capture-row">
+        <button class="btn" id="gpsBtn" type="button">📍 Capture GPS Location</button>
+        <span class="gps-chip empty" id="gpsChip">Not captured</span>
+      </div>
+      <div class="capture-row">
+        <button class="btn" id="photoBtn" type="button">📷 Take / Upload Photos</button>
+        <input type="file" id="fileInput" accept="image/*" capture="environment" multiple>
+      </div>
+      <div class="photo-previews" id="photoPreviews"></div>
+      <div class="photo-count-note" id="photoCountNote"></div>
+    </div>
+
+    <button class="btn primary add-btn" id="addBtn" type="button">✓ Save Record</button>
+    <div class="status" id="formStatus"></div>
+  </div>
+
+  <div class="records-head">
+    <h2>Saved Records</h2>
+    <span class="count" id="countLabel">0 records</span>
+  </div>
+
+  <div id="recordsList">
+    <div class="empty-state" id="emptyState">No records yet — all data is automatically saved locally and persists even after closing the app.</div>
+  </div>
+
+  <div class="export-bar">
+    <button class="btn primary" id="exportBtn" type="button">📄 Print / Save as PDF</button>
+    <button class="btn" id="clearBtn" type="button" style="color:var(--error); border-color:var(--error);">🗑 Delete All</button>
+  </div>
+  <div class="note">All data is automatically saved on your device. Camera and GPS access require your permission.</div>
+
+  <div id="printSheet">
+    <div class="p-title">DataLogger Pro — Records</div>
+    <div class="p-sub" id="printMeta"></div>
+    <div id="printRecords"></div>
+  </div>
+
+</div>
+
+<div class="location-modal" id="locationModal">
+  <div class="location-card">
+    <div class="location-header">
+      <h3>📍 Location Captured</h3>
+      <div class="location-coords-display" id="locationDetails"></div>
+    </div>
+    <div id="mapContainer"></div>
+    <div class="location-footer">
+      <a class="map-link" id="googleMapsLink" href="#" target="_blank" rel="noopener">Open in Google Maps</a>
+      <button class="close-btn" id="locationClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const records = [];
+  let pendingCoords = null;
+  let pendingPhotos = []; // array of {dataUrl}
+  let currentMap = null;
+
+  const $ = (id) => document.getElementById(id);
+  const gpsBtn = $('gpsBtn'), gpsChip = $('gpsChip');
+  const photoBtn = $('photoBtn'), fileInput = $('fileInput');
+  const photoPreviews = $('photoPreviews'), photoCountNote = $('photoCountNote');
+  const addBtn = $('addBtn'), formStatus = $('formStatus');
+  const recordsList = $('recordsList'), emptyState = $('emptyState'), countLabel = $('countLabel');
+  const exportBtn = $('exportBtn'), clearBtn = $('clearBtn');
+  const locationModal = $('locationModal'), locationDetails = $('locationDetails');
+
+  const MAX_PHOTOS_PER_RECORD = 20; // generous cap, well above the old breaking point of 5
+
+  function saveToStorage(){
+    try{
+      localStorage.setItem('dataloggerProRecords', JSON.stringify(records));
+    }catch(e){
+      formStatus.textContent = 'Warning: storage is full, some data may not be saved.';
+      formStatus.classList.add('error');
+      setTimeout(() => { formStatus.textContent = ''; formStatus.classList.remove('error'); }, 4000);
+    }
+  }
+  function loadFromStorage(){
+    const saved = localStorage.getItem('dataloggerProRecords');
+    if(saved){
+      try{
+        const parsed = JSON.parse(saved);
+        records.splice(0, records.length, ...parsed);
+      }catch(e){ /* ignore corrupt data */ }
+      renderRecords();
+    }
+  }
+  loadFromStorage();
+
+  gpsBtn.addEventListener('click', () => {
+    if(!navigator.geolocation){
+      gpsChip.textContent = 'Geolocation not supported';
+      return;
+    }
+    gpsChip.textContent = 'Finding location...';
+    gpsChip.classList.add('empty');
+    gpsChip.classList.remove('success');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        pendingCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
+        gpsChip.textContent = `${pendingCoords.lat.toFixed(5)}, ${pendingCoords.lng.toFixed(5)}`;
+        gpsChip.classList.remove('empty');
+        gpsChip.classList.add('success');
+        showLocationModal(pendingCoords);
+      },
+      () => {
+        gpsChip.textContent = 'Location access denied';
+        gpsChip.classList.add('empty');
+        formStatus.textContent = 'Error: Could not get location';
+        formStatus.classList.add('error');
+        setTimeout(() => { formStatus.textContent = ''; formStatus.classList.remove('error'); }, 3000);
+        pendingCoords = null;
+      },
+      { enableHighAccuracy: true, timeout: 12000 }
+    );
+  });
+
+  function showLocationModal(coords){
+    locationDetails.innerHTML = `<strong>Latitude:</strong> ${coords.lat.toFixed(8)}<br><strong>Longitude:</strong> ${coords.lng.toFixed(8)}<br><strong>Accuracy:</strong> \u00B1${Math.round(coords.acc)}m`;
+    
+    $('googleMapsLink').href = `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`;
+    
+    locationModal.classList.add('show');
+    
+    setTimeout(() => {
+      if(currentMap){ currentMap.remove(); currentMap = null; }
+      currentMap = L.map('mapContainer').setView([coords.lat, coords.lng], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
+      }).addTo(currentMap);
+      L.marker([coords.lat, coords.lng]).addTo(currentMap).bindPopup(`📍 ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`).openPopup();
+      currentMap.invalidateSize();
+    }, 100);
+  }
+
+  $('locationClose').addEventListener('click', () => {
+    locationModal.classList.remove('show');
+    if(currentMap){ currentMap.remove(); currentMap = null; }
+  });
+
+  photoBtn.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', () => {
+    const files = Array.from(fileInput.files || []);
+    if(files.length === 0) return;
+
+    if(pendingPhotos.length + files.length > MAX_PHOTOS_PER_RECORD){
+      formStatus.textContent = `You can attach up to ${MAX_PHOTOS_PER_RECORD} photos per record.`;
+      formStatus.classList.add('error');
+      setTimeout(() => { formStatus.textContent = ''; formStatus.classList.remove('error'); }, 3500);
+    }
+
+    const toAdd = files.slice(0, Math.max(0, MAX_PHOTOS_PER_RECORD - pendingPhotos.length));
+
+    toAdd.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        pendingPhotos.push({ dataUrl: e.target.result });
+        renderPhotoPreviews();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // allow re-selecting the same file(s) again later
+    fileInput.value = '';
+  });
+
+  function renderPhotoPreviews(){
+    photoPreviews.innerHTML = '';
+    pendingPhotos.forEach((p, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'photo-preview-wrap';
+      wrap.innerHTML = `
+        <img class="photo-preview" src="${p.dataUrl}">
+        <button class="photo-remove" data-i="${i}" type="button" title="Remove">×</button>
+      `;
+      photoPreviews.appendChild(wrap);
+    });
+    photoCountNote.textContent = pendingPhotos.length > 0
+      ? `${pendingPhotos.length} photo${pendingPhotos.length === 1 ? '' : 's'} attached (max ${MAX_PHOTOS_PER_RECORD})`
+      : '';
+    document.querySelectorAll('.photo-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const i = parseInt(e.currentTarget.getAttribute('data-i'), 10);
+        pendingPhotos.splice(i, 1);
+        renderPhotoPreviews();
+      });
+    });
+  }
+
+  function resetForm(){
+    $('name').value = ''; $('phone').value = ''; $('address').value = '';
+    pendingCoords = null; pendingPhotos = [];
+    gpsChip.textContent = 'Not captured'; gpsChip.classList.add('empty'); gpsChip.classList.remove('success');
+    renderPhotoPreviews();
+    fileInput.value = '';
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function renderRecords(){
+    countLabel.textContent = `${records.length} record${records.length === 1 ? '' : 's'}`;
+    if(records.length === 0){
+      emptyState.style.display = 'block';
+      recordsList.innerHTML = '';
+      recordsList.appendChild(emptyState);
+      return;
+    }
+    emptyState.style.display = 'none';
+    recordsList.innerHTML = '';
+    records.forEach((r, idx) => {
+      const photos = r.photos || (r.photo ? [r.photo] : []); // backward compat with old single-photo records
+      const div = document.createElement('div');
+      div.className = 'record';
+      const sealText = r.coords ? `${r.coords.lat.toFixed(1)}°<br>${r.coords.lng.toFixed(1)}°` : 'No<br>GPS';
+
+      let thumbHtml;
+      if(photos.length === 0){
+        thumbHtml = `<div class="no-photo">No photo</div>`;
+      } else if(photos.length === 1){
+        thumbHtml = `<img class="thumb single" src="${photos[0].dataUrl}">`;
+      } else {
+        thumbHtml = `<div class="thumb-grid">` + photos.slice(0,4).map((p,i) => {
+          if(i === 3 && photos.length > 4){
+            return `<div class="thumb" style="display:flex;align-items:center;justify-content:center;background:#EAF1FB;color:#0D47A1;font-weight:800;font-size:12px;">+${photos.length - 3}</div>`;
+          }
+          return `<img class="thumb" src="${p.dataUrl}">`;
+        }).join('') + `</div>`;
+      }
+
+      div.innerHTML = `
+        <div class="thumb-wrap">
+          ${thumbHtml}
+          <div class="seal">${sealText}</div>
+        </div>
+        <div class="info">
+          <p class="name">${escapeHtml(r.name || 'Unnamed Record')}</p>
+          <div class="meta">
+            ${r.phone ? `<span>☎ ${escapeHtml(r.phone)}</span>` : ''}
+            ${r.address ? `<span>📍 ${escapeHtml(r.address)}</span>` : ''}
+            ${photos.length > 0 ? `<span>🖼 ${photos.length} photo${photos.length === 1 ? '' : 's'}</span>` : ''}
+          </div>
+          ${r.coords ? `<div class="coords">${r.coords.lat.toFixed(5)}, ${r.coords.lng.toFixed(5)}</div>` : ''}
+          <div class="timestamp">${new Date(r.timestamp).toLocaleString()}</div>
+          <div class="actions">
+            ${r.coords ? `<button class="map-btn" data-idx="${idx}">🗺 View Map</button>` : ''}
+            <button class="del" data-idx="${idx}">Delete</button>
+          </div>
+        </div>
+      `;
+      recordsList.appendChild(div);
+    });
+    document.querySelectorAll('.map-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+        showLocationModal(records[idx].coords);
+      });
+    });
+    document.querySelectorAll('.del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        records.splice(parseInt(e.target.getAttribute('data-idx'), 10), 1);
+        saveToStorage();
+        renderRecords();
+      });
+    });
+  }
+
+  addBtn.addEventListener('click', () => {
+    const name = $('name').value.trim();
+    const phone = $('phone').value.trim();
+    const address = $('address').value.trim();
+    if(!name && !phone && !address){
+      formStatus.textContent = 'Enter at least name, phone, or address.';
+      formStatus.classList.add('error');
+      setTimeout(() => { formStatus.textContent = ''; formStatus.classList.remove('error'); }, 3000);
+      return;
+    }
+    records.push({ name, phone, address, coords: pendingCoords, photos: pendingPhotos.slice(), timestamp: new Date().toISOString() });
+    saveToStorage();
+    formStatus.textContent = '✓ Record saved successfully.';
+    formStatus.classList.add('success');
+    setTimeout(() => { formStatus.textContent = ''; formStatus.classList.remove('success'); }, 2500);
+    resetForm();
+    renderRecords();
+  });
+
+  function buildPrintSheet(){
+    $('printMeta').textContent = `Generated: ${new Date().toLocaleString()} · Records: ${records.length}`;
+    const container = $('printRecords');
+    container.innerHTML = '';
+    records.forEach((r) => {
+      const photos = r.photos || (r.photo ? [r.photo] : []);
+      const div = document.createElement('div');
+      div.className = 'p-record';
+      div.innerHTML = `
+        <div class="p-record-header">
+          <p class="p-name">${escapeHtml(r.name || 'Unnamed Record')}</p>
+          <span class="p-timestamp">${new Date(r.timestamp).toLocaleString()}</span>
+        </div>
+        <div class="p-meta">
+          ${r.phone ? `Phone: ${escapeHtml(r.phone)}<br>` : ''}
+          ${r.address ? `Address: ${escapeHtml(r.address)}<br>` : ''}
+        </div>
+        ${r.coords ? `<div class="p-coords">📍 ${r.coords.lat.toFixed(5)}, ${r.coords.lng.toFixed(5)} &nbsp;·&nbsp; Accuracy: \u00B1${Math.round(r.coords.acc)}m</div>` : ''}
+        <div class="p-photo-grid">
+          ${photos.length > 0
+            ? photos.map(p => `<img src="${p.dataUrl}">`).join('')
+            : `<span class="p-noimg">No photos attached</span>`}
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  exportBtn.addEventListener('click', () => {
+    if(records.length === 0){
+      formStatus.textContent = 'No records to export.';
+      formStatus.classList.add('error');
+      setTimeout(() => { formStatus.textContent = ''; formStatus.classList.remove('error'); }, 2000);
+      return;
+    }
+    buildPrintSheet();
+    setTimeout(() => window.print(), 60);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    if(confirm('Delete all records? This cannot be undone.')){
+      records.length = 0;
+      saveToStorage();
+      renderRecords();
+      formStatus.textContent = '✓ All records deleted.';
+      formStatus.classList.add('success');
+      setTimeout(() => { formStatus.textContent = ''; formStatus.classList.remove('success'); }, 2500);
+    }
+  });
+
+  renderRecords();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    });
+  }
+</script>
+</body>
+</html>
